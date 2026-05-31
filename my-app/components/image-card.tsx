@@ -1,6 +1,15 @@
 import type { ImageItem } from "@/lib/mock-data";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Check, ImageIcon } from "lucide-react";
 
@@ -19,11 +28,11 @@ export function ImageCard({ image, selected = false, compact = false }: ImageCar
       )}
     >
       <CardContent className="p-0">
-        <div
+        <AspectRatio
+          ratio={compact ? 16 / 7 : 16 / 9}
           className={cn(
             "relative flex items-center justify-center bg-gradient-to-br",
-            image.gradient,
-            compact ? "h-24" : "h-40"
+            image.gradient
           )}
         >
           <ImageIcon className="size-8 text-foreground/35" />
@@ -32,25 +41,23 @@ export function ImageCard({ image, selected = false, compact = false }: ImageCar
               <Check className="size-4" />
             </div>
           ) : null}
-        </div>
-        <div className="space-y-3 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-sm font-semibold">{image.title}</h3>
-              <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                {image.prompt}
-              </p>
-            </div>
-            <Badge className={cn("shrink-0 rounded-[6px]", image.tone)}>
-              {image.status}
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{image.date}</span>
-            <span>{image.size}</span>
-          </div>
-        </div>
+        </AspectRatio>
       </CardContent>
+      <CardHeader className="gap-1 px-3">
+        <CardTitle className="truncate text-sm">{image.title}</CardTitle>
+        <CardDescription className="line-clamp-2 text-xs leading-5">
+          {image.prompt}
+        </CardDescription>
+        <CardAction>
+          <Badge className={cn("shrink-0 rounded-[6px]", image.tone)}>
+            {image.status}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="justify-between px-3 text-xs text-muted-foreground">
+        <span>{image.date}</span>
+        <span>{image.size}</span>
+      </CardFooter>
     </Card>
   );
 }

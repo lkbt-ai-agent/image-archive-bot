@@ -1,36 +1,38 @@
 "use client";
 
 import type { ImageItem } from "@/lib/mock-data";
-import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { ImageIcon } from "lucide-react";
 
 type ImageSelectionProps = {
   images: ImageItem[];
   selectedIds: string[];
-  onToggle: (id: string) => void;
+  onChange: (ids: string[]) => void;
 };
 
 export function ImageSelection({
   images,
   selectedIds,
-  onToggle,
+  onChange,
 }: ImageSelectionProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      {images.map((image) => {
-        const selected = selectedIds.includes(image.id);
-
-        return (
-          <Button
+    <ScrollArea className="w-full pb-1">
+      <ToggleGroup
+        type="multiple"
+        value={selectedIds}
+        onValueChange={onChange}
+        variant="outline"
+        size="sm"
+        className="w-max"
+      >
+        {images.map((image) => (
+          <ToggleGroupItem
             key={image.id}
-            type="button"
-            variant={selected ? "secondary" : "outline"}
-            className={cn(
-              "h-10 shrink-0 rounded-[8px] px-2.5",
-              selected && "border-emerald-200 bg-emerald-50 text-emerald-800"
-            )}
-            onClick={() => onToggle(image.id)}
+            value={image.id}
+            aria-label={`Select ${image.title}`}
+            className="h-10 rounded-[8px] px-2.5 data-[state=on]:border-emerald-200 data-[state=on]:bg-emerald-50 data-[state=on]:text-emerald-800"
           >
             <span
               className={cn(
@@ -41,9 +43,10 @@ export function ImageSelection({
               <ImageIcon className="size-3 text-foreground/45" />
             </span>
             <span className="max-w-32 truncate text-xs">{image.title}</span>
-          </Button>
-        );
-      })}
-    </div>
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
   );
 }
