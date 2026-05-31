@@ -1,5 +1,7 @@
 "use client";
 
+import { useLayoutEffect, useRef, useState } from "react";
+
 import type { ImageItem } from "@/lib/mock-data";
 import { ImageSelection } from "@/components/image-selection";
 import {
@@ -28,16 +30,30 @@ export function UploadArea({
   selectedIds,
   onSelectedImagesChange,
 }: UploadAreaProps) {
+  const [prompt, setPrompt] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "0px";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [prompt]);
+
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-3">
-      <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="mx-auto w-full max-w-4xl space-y-2">
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
         {commandSuggestions.map((command) => (
           <Button
             key={command}
             type="button"
             variant="outline"
             size="sm"
-            className="shrink-0 rounded-full bg-white/95 shadow-xs"
+            className="shrink-0 rounded-full bg-background shadow-xs"
           >
             <Sparkles className="size-3.5" />
             {command}
@@ -47,25 +63,28 @@ export function UploadArea({
           type="button"
           variant="outline"
           size="sm"
-          className="shrink-0 rounded-full bg-white/95 shadow-xs"
+          className="shrink-0 rounded-full bg-background shadow-xs"
         >
           <UploadCloud className="size-3.5" />
           Upload image
         </Button>
       </div>
 
-      <ImageSelection
-        images={images}
-        selectedIds={selectedIds}
-        onChange={onSelectedImagesChange}
-      />
-
-      <InputGroup className="rounded-[18px] bg-white shadow-lg shadow-slate-200/70">
-        <InputGroupTextarea
-          placeholder="Ask to archive, compare, or generate images..."
-          className="max-h-40 min-h-20 px-3 pt-3"
+      <InputGroup className="rounded-2xl border border-border bg-background p-2 shadow-xs">
+        <ImageSelection
+          images={images}
+          selectedIds={selectedIds}
+          onChange={onSelectedImagesChange}
         />
-        <InputGroupAddon align="block-end" className="justify-between px-3">
+        <InputGroupTextarea
+          ref={textareaRef}
+          value={prompt}
+          placeholder="Ask to archive, compare, or generate images..."
+          rows={1}
+          onChange={(event) => setPrompt(event.target.value)}
+          className="max-h-40 min-h-[40px] overflow-y-auto border-0 bg-transparent px-2 py-2 leading-6"
+        />
+        <InputGroupAddon align="block-end" className="justify-between px-0 pb-0">
           <div className="flex items-center gap-1">
             <InputGroupButton size="icon-sm" aria-label="Attach image">
               <Paperclip className="size-4" />

@@ -31,7 +31,7 @@ export function ImageCard({ image, selected = false, compact = false }: ImageCar
         <AspectRatio
           ratio={compact ? 16 / 7 : 16 / 9}
           className={cn(
-            "relative flex items-center justify-center bg-gradient-to-br",
+            "relative flex items-center justify-center bg-linear-to-br",
             image.gradient
           )}
         >

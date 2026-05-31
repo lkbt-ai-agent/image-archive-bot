@@ -1,10 +1,10 @@
 "use client";
 
 import type { ImageItem } from "@/lib/mock-data";
+import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, X } from "lucide-react";
 
 type ImageSelectionProps = {
   images: ImageItem[];
@@ -17,35 +17,47 @@ export function ImageSelection({
   selectedIds,
   onChange,
 }: ImageSelectionProps) {
+  const selectedImages = selectedIds
+    .map((id) => images.find((image) => image.id === id))
+    .filter((image): image is ImageItem => Boolean(image));
+
+  if (!selectedImages.length) {
+    return null;
+  }
+
+  function removeImage(id: string) {
+    onChange(selectedIds.filter((selectedId) => selectedId !== id));
+  }
+
   return (
-    <ScrollArea className="w-full pb-1">
-      <ToggleGroup
-        type="multiple"
-        value={selectedIds}
-        onValueChange={onChange}
-        variant="outline"
-        size="sm"
-        className="w-max"
-      >
-        {images.map((image) => (
-          <ToggleGroupItem
+    <ScrollArea className="w-full">
+      <div className="flex w-max gap-2 pb-2">
+        {selectedImages.map((image) => (
+          <div
             key={image.id}
-            value={image.id}
-            aria-label={`Select ${image.title}`}
-            className="h-10 rounded-[8px] px-2.5 data-[state=on]:border-emerald-200 data-[state=on]:bg-emerald-50 data-[state=on]:text-emerald-800"
+            className="relative size-[54px] shrink-0 overflow-hidden rounded-lg border border-border bg-muted shadow-xs sm:size-28 sm:rounded-xl"
           >
-            <span
+            <div
               className={cn(
-                "flex size-6 items-center justify-center rounded-[6px] bg-gradient-to-br",
+                "flex size-full items-center justify-center bg-linear-to-br",
                 image.gradient
               )}
             >
-              <ImageIcon className="size-3 text-foreground/45" />
-            </span>
-            <span className="max-w-32 truncate text-xs">{image.title}</span>
-          </ToggleGroupItem>
+              <ImageIcon className="size-5 text-foreground/35 sm:size-8" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-xs"
+              className="absolute right-1 top-1 size-5 rounded-full bg-background shadow-sm sm:right-1.5 sm:top-1.5 sm:size-6"
+              aria-label={`Remove ${image.title}`}
+              onClick={() => removeImage(image.id)}
+            >
+              <X className="size-3 sm:size-3.5" />
+            </Button>
+          </div>
         ))}
-      </ToggleGroup>
+      </div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
   );

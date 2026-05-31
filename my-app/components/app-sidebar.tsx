@@ -10,6 +10,7 @@ import {
   ChevronsUpDown,
   ChevronRight,
   CreditCard,
+  Ellipsis,
   Images,
   LogOut,
   MessageSquarePlus,
@@ -224,11 +225,31 @@ function RecentsMenu() {
         <SidebarMenu>
           {recentChats.map((chat) => (
             <SidebarMenuItem key={chat}>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild className="pr-8">
                 <Link href="/chat">
                   <span>{chat}</span>
                 </Link>
               </SidebarMenuButton>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction showOnHover>
+                    <Ellipsis />
+                    <span className="sr-only">More</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40" side="right" align="start">
+                  <DropdownMenuItem>
+                    <span>Share</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <span>Rename</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive">
+                    <span>Delete</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
