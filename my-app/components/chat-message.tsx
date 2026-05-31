@@ -30,7 +30,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           className={cn(
             "rounded-[8px] px-4 py-3 text-sm leading-6 shadow-xs",
             isUser
-              ? "bg-foreground text-background"
+              ? "bg-foreground/80 text-background"
               : "border border-border bg-white text-foreground"
           )}
         >
