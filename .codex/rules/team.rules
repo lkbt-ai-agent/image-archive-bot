@@ -1,0 +1,64 @@
+# 파괴적 Git 명령 차단
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "forbidden",
+    justification = "Use a reviewed revert plan instead of destructive reset",
+    match = [
+        "git reset --hard",
+    ],
+)
+
+# 의존성 변경은 사람이 확인
+prefix_rule(
+    pattern = ["npm", ["install", "i"]],
+    decision = "prompt",
+    justification = "Dependency changes require human review",
+    match = [
+        "npm install react",
+        "npm i react",
+    ],
+)
+
+
+# 파일/디렉토리 삭제는 사람이 확인
+prefix_rule(
+    pattern = ["rm", ["-rf", "-fr"]],
+    decision = "prompt",
+    justification = "recursive delete is forbidden.",
+    match = ["rm -rf ./test.tsx"],
+)
+prefix_rule(
+    pattern = ["sudo", "rm", ["-rf", "-fr"]],
+    decision = "prompt",
+    justification = "recursive delete is forbidden.",
+    match = ["sudo rm -rf ./test.tsx"],
+)
+
+# 루트 삭제는 금지
+prefix_rule(
+    pattern = ["rm", ["-rf", "-fr"], ["/", "~/"]],
+    decision = "forbidden",
+    justification = "recursive delete is forbidden.",
+    match = [
+        "rm -rf /",
+        "rm -rf ~/"
+    ],
+)
+prefix_rule(
+    pattern = ["sudo", "rm", ["-rf", "-fr"], ["/", "~/"]],
+    decision = "forbidden",
+    justification = "recursive delete is forbidden.",
+    match = [
+        "sudo rm -rf /",
+        "sudo rm -rf ~/"
+    ],
+)
+prefix_rule(
+    pattern = ["find", ["/", "~/"], "-delete"],
+    decision = "forbidden",
+    justification = "recursive delete is forbidden.",
+    match = [
+        "find / -delete",
+        "find ~/ -delete"
+    ],
+)
