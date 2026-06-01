@@ -151,7 +151,6 @@ def post_user_message(
     image_ids: list[UUID] | None = None,
 ) -> dict:
     user_message = ChatMessage(session_id=session.id, role="user", content=content)
-    _touch_session(session, content)
     db.add(user_message)
     db.commit()
     db.refresh(user_message)
@@ -192,6 +191,7 @@ def post_user_message(
         db.flush()
         generation.assistant_message_id = assistant_message.id
         _attach_images_to_message(db, assistant_message.id, [image])
+        _touch_session(session, content)
         db.commit()
         db.refresh(assistant_message)
         generation_id = generation.id
@@ -209,6 +209,7 @@ def post_user_message(
         db.add(assistant_message)
         db.flush()
         _attach_images_to_message(db, assistant_message.id, attached_images)
+        _touch_session(session, content)
         db.commit()
         db.refresh(assistant_message)
     else:
@@ -239,6 +240,7 @@ def post_user_message(
             openai_response_id=response_id,
         )
         db.add(assistant_message)
+        _touch_session(session, content)
         db.commit()
         db.refresh(assistant_message)
 

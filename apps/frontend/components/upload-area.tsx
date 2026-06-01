@@ -60,8 +60,8 @@ export function UploadArea({
       return;
     }
 
-    await onSubmit(value);
     setPrompt("");
+    await onSubmit(value);
   }
 
   async function uploadFile(file: File | undefined) {

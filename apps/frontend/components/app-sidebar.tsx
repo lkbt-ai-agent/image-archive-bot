@@ -15,7 +15,6 @@ import {
   Images,
   LogOut,
   MessageSquarePlus,
-  Search,
   Settings2,
   Sparkles,
   type LucideIcon,
@@ -65,11 +64,6 @@ const primaryItems = [
     title: "Archive",
     url: "/archive",
     icon: Archive,
-  },
-  {
-    title: "Search",
-    url: "/search",
-    icon: Search,
   },
   {
     title: "Generated",
@@ -138,23 +132,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 function MainMenu() {
   const pathname = usePathname();
   const router = useRouter();
-  const [creating, setCreating] = useState(false);
 
-  async function createChat() {
-    if (creating) {
-      return;
-    }
-
-    setCreating(true);
-
-    try {
-      const session = await api.createSession("Image workspace");
-      window.dispatchEvent(new Event("chat-sessions-changed"));
-      router.push(`/chat/${session.id}`);
-      router.refresh();
-    } finally {
-      setCreating(false);
-    }
+  function startDraftChat() {
+    router.push("/chat");
   }
 
   return (
@@ -164,11 +144,10 @@ function MainMenu() {
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="New Chat"
-              disabled={creating}
-              onClick={createChat}
+              onClick={startDraftChat}
             >
               <MessageSquarePlus />
-              <span>{creating ? "Creating..." : "New Chat"}</span>
+              <span>New Chat</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           {primaryItems.map((item) => (
@@ -271,7 +250,7 @@ function RecentsMenu() {
       active = false;
       window.removeEventListener("chat-sessions-changed", loadSessions);
     };
-  }, [pathname]);
+  }, []);
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">

@@ -67,12 +67,14 @@ function ImagePreview({
   image,
   className,
   iconClassName,
+  original = false,
 }: {
   image: ArchivedImage;
   className?: string;
   iconClassName?: string;
+  original?: boolean;
 }) {
-  const src = resolveAssetUrl(image.thumbnail_url ?? image.file_url);
+  const src = resolveAssetUrl(original ? image.file_url : image.thumbnail_url ?? image.file_url);
 
   return (
     <div
@@ -88,7 +90,7 @@ function ImagePreview({
         <img
           src={src}
           alt={getImageTitle(image)}
-          className="size-full object-cover"
+          className={cn("size-full", original ? "object-contain" : "object-cover")}
           loading="lazy"
         />
       ) : (
@@ -143,7 +145,7 @@ export function ImageCard({
         <div className="grid min-h-0 md:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.55fr)]">
           <div className="min-h-0 bg-muted">
             <AspectRatio ratio={4 / 5} className="h-full max-h-[70dvh] md:max-h-[calc(100dvh-2rem)]">
-              <ImagePreview image={image} iconClassName="size-16 md:size-20" />
+              <ImagePreview image={image} iconClassName="size-16 md:size-20" original />
             </AspectRatio>
           </div>
           <div className="min-h-0 overflow-y-auto p-4 md:p-5">

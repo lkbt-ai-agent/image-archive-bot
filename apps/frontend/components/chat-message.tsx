@@ -10,6 +10,7 @@ type ChatMessageProps = {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
+  const hasSingleImage = message.images?.length === 1;
 
   return (
     <div className={cn("flex gap-3", isUser && "justify-end")}>
@@ -37,7 +38,19 @@ export function ChatMessage({ message }: ChatMessageProps) {
           {message.content}
         </div>
         {message.images?.length ? (
-          <div className="grid w-full gap-3 sm:grid-cols-2">
+          <div
+            className={cn(
+              "grid gap-3",
+              isUser
+                ? cn(
+                    "w-full self-end",
+                    hasSingleImage
+                      ? "max-w-[480px]"
+                      : "max-w-[760px] sm:grid-cols-2"
+                  )
+                : "w-full sm:grid-cols-2"
+            )}
+          >
             {message.images.map((image) => (
               <ImageCard key={image.id} image={image} compact />
             ))}

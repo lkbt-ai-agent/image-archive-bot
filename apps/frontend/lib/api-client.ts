@@ -105,7 +105,7 @@ export const api = {
     return request<ChatSession[]>("/api/chat/sessions");
   },
 
-  createSession(title = "Image workspace") {
+  createSession(title: string | null = null) {
     return request<ChatSession>("/api/chat/sessions", {
       method: "POST",
       body: JSON.stringify({ title }),

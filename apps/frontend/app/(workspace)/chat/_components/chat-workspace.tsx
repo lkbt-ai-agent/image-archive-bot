@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { ChatMessage } from "@/components/chat-message";
@@ -13,16 +13,6 @@ import type {
   ChatMessage as ChatMessageType,
   ChatSession,
 } from "@/lib/types";
-
-const welcomeMessage: ChatMessageType = {
-  id: "welcome",
-  session_id: "local",
-  role: "assistant",
-  content:
-    "Send images to archive them, or describe a new image to generate. Generated results are saved back into the archive.",
-  openai_response_id: null,
-  created_at: new Date().toISOString(),
-};
 
 function wantsGeneration(prompt: string) {
   return /\b(generate|generation|create|draw|image)\b/i.test(prompt);
@@ -44,8 +34,9 @@ type ChatWorkspaceProps = {
 
 export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
   const router = useRouter();
+  const localSessionIdsRef = useRef(new Set<string>());
   const [session, setSession] = useState<ChatSession | null>(null);
-  const [messages, setMessages] = useState<ChatMessageType[]>([welcomeMessage]);
+  const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [messageImages, setMessageImages] = useState<Record<string, ArchivedImage[]>>({});
   const [selectableImages, setSelectableImages] = useState<ArchivedImage[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -67,22 +58,32 @@ export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
     let active = true;
 
     async function initialize() {
+      if (sessionId && localSessionIdsRef.current.has(sessionId)) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       setSelectedIds([]);
 
       try {
         const imagesPromise = api.listImages({ limit: 24 });
-        const detail = sessionId
-          ? await api.getSession(sessionId)
-          : await (async () => {
-              const sessions = await api.listSessions();
-              const currentSession =
-                sessions[0] ?? (await api.createSession("Image workspace"));
-              router.replace(`/chat/${currentSession.id}`);
-              return api.getSession(currentSession.id);
-            })();
         const imagePayload = await imagesPromise;
+
+        if (!sessionId) {
+          if (!active) {
+            return;
+          }
+
+          setSession(null);
+          setMessages([]);
+          setMessageImages({});
+          setSelectableImages(imagePayload.items);
+          return;
+        }
+
+        const detail = await api.getSession(sessionId);
 
         if (!active) {
           return;
@@ -94,7 +95,7 @@ export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
           created_at: detail.created_at,
           updated_at: detail.updated_at,
         });
-        setMessages(detail.messages.length ? detail.messages : [welcomeMessage]);
+        setMessages(detail.messages);
         setMessageImages(mapImagesByMessage(detail.messages));
         setSelectableImages(imagePayload.items);
       } catch (err) {
@@ -113,10 +114,10 @@ export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
     return () => {
       active = false;
     };
-  }, [router, sessionId]);
+  }, [sessionId]);
 
   async function sendMessage(prompt: string) {
-    if (!session || sending) {
+    if (sending) {
       return;
     }
 
@@ -128,8 +129,28 @@ export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
     setSending(true);
     setError(null);
 
+    const optimisticMessage: ChatMessageType = {
+      id: `optimistic-${crypto.randomUUID()}`,
+      session_id: session?.id ?? "pending",
+      role: "user",
+      content: prompt,
+      openai_response_id: null,
+      created_at: new Date().toISOString(),
+      images: attachedImages,
+    };
+
+    setMessages((current) => [...current, optimisticMessage]);
+
     try {
-      const response = await api.postMessage(session.id, {
+      const currentSession = session ?? (await api.createSession());
+
+      if (!session) {
+        localSessionIdsRef.current.add(currentSession.id);
+        setSession(currentSession);
+        window.history.replaceState(null, "", `/chat/${currentSession.id}`);
+      }
+
+      const response = await api.postMessage(currentSession.id, {
         content: prompt,
         image_ids: attachedImageIds,
         generation: wantsGeneration(prompt)
@@ -138,8 +159,9 @@ export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
       });
 
       setMessages((current) => [
-        ...current,
-        response.user_message,
+        ...current.map((message) =>
+          message.id === optimisticMessage.id ? response.user_message : message
+        ),
         response.assistant_message,
       ]);
 
@@ -163,9 +185,23 @@ export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
         setSelectableImages((current) => [generatedImage, ...current]);
       }
 
+      setSession((current) =>
+        current
+          ? {
+              ...current,
+              updated_at: response.assistant_message.created_at,
+            }
+          : current
+      );
+      if (!session) {
+        router.replace(`/chat/${currentSession.id}`);
+      }
       window.dispatchEvent(new Event("chat-sessions-changed"));
       setSelectedIds([]);
     } catch (err) {
+      setMessages((current) =>
+        current.filter((message) => message.id !== optimisticMessage.id)
+      );
       setError(err instanceof Error ? err.message : "Unable to send message.");
     } finally {
       setSending(false);
@@ -222,7 +258,7 @@ export function ChatWorkspace({ sessionId }: ChatWorkspaceProps) {
           images={selectableImages}
           selectedIds={selectedIds}
           onSelectedImagesChange={setSelectedIds}
-          disabled={!session || sending || loading}
+          disabled={sending || loading}
           uploadDisabled={uploading}
           onSubmit={sendMessage}
           onUpload={uploadImage}
