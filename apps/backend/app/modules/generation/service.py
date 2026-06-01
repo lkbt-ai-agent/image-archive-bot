@@ -52,18 +52,18 @@ def create_generation(
 
     try:
         content, revised_prompt = generate_image(prompt, size, settings)
-        path, size_bytes, digest = save_generated_image(content, settings)
-        thumbnail_path, width, height = create_thumbnail(path, settings)
+        stored = save_generated_image(content, settings)
+        thumbnail_path, width, height = create_thumbnail(stored.object_name, settings)
         image = Image(
             source_type="generated",
             original_filename=f"{generation.id}.png",
             mime_type="image/png",
-            file_path=str(path),
-            thumbnail_path=str(thumbnail_path),
+            file_path=stored.object_name,
+            thumbnail_path=thumbnail_path,
             width=width,
             height=height,
-            size_bytes=size_bytes,
-            sha256=digest,
+            size_bytes=stored.size_bytes,
+            sha256=stored.sha256,
         )
         db.add(image)
         db.flush()

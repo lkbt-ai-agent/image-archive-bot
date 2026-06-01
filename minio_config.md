@@ -1,0 +1,4 @@
+- Endpoint: http://49.247.14.186:9000/
+- Access-key: lkbt1504
+- Secret-key: lkbt1504!
+- Bucket: image-archive-bot

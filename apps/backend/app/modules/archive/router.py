@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -12,7 +12,7 @@ from app.modules.archive.service import (
     delete_image as delete_image_record,
     get_image,
     list_images,
-    resolve_image_path,
+    load_image_bytes,
     run_ingest_for_image,
     serialize_image,
     update_metadata,
@@ -79,10 +79,13 @@ def image_file(image_id: UUID, db: Session = Depends(get_db)):
     if not image:
         raise HTTPException(status_code=404, detail="Image not found.")
     try:
-        path = resolve_image_path(image)
+        content = load_image_bytes(image)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return FileResponse(path, media_type=image.mime_type, filename=image.original_filename)
+    headers = {}
+    if image.original_filename:
+        headers["Content-Disposition"] = f'inline; filename="{image.original_filename}"'
+    return Response(content=content, media_type=image.mime_type, headers=headers)
 
 
 @router.get("/images/{image_id}/thumbnail")
@@ -91,7 +94,7 @@ def image_thumbnail(image_id: UUID, db: Session = Depends(get_db)):
     if not image:
         raise HTTPException(status_code=404, detail="Image not found.")
     try:
-        path = resolve_image_path(image, thumbnail=True)
+        content = load_image_bytes(image, thumbnail=True)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return FileResponse(path, media_type="image/jpeg")
+    return Response(content=content, media_type="image/jpeg")

@@ -1,11 +1,11 @@
 from uuid import UUID
-from pathlib import Path
 
 from sqlalchemy.dialects.postgresql import insert
 
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.openai_client import build_embedding_text, create_embedding, extract_image_metadata
+from app.core.storage import get_object_bytes
 from app.models.image import Image, ImageEmbedding, ImageMetadata
 
 
@@ -15,7 +15,10 @@ def ingest_image_metadata(image_id: UUID) -> None:
         image = db.get(Image, image_id)
         if not image:
             return
-        metadata = extract_image_metadata(path=Path(image.file_path), mime_type=image.mime_type)
+        metadata = extract_image_metadata(
+            image_bytes=get_object_bytes(image.file_path, settings),
+            mime_type=image.mime_type,
+        )
         embedding_text = build_embedding_text(metadata)
         embedding = create_embedding(embedding_text, settings)
 

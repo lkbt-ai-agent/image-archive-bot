@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from uuid import UUID
 
 from fastapi import UploadFile
@@ -7,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
-from app.core.storage import create_thumbnail, save_upload
+from app.core.storage import create_thumbnail, get_object_bytes, remove_object, save_upload, storage_prefix
 from app.models.image import Image, ImageMetadata
 from app.workers.image_ingest import ingest_image_metadata
 
@@ -46,23 +45,23 @@ def serialize_image(image: Image) -> dict:
 
 
 def create_uploaded_image(db: Session, file: UploadFile) -> Image:
-    path, size_bytes, digest = save_upload(file)
-    existing = db.scalar(select(Image).where(Image.sha256 == digest))
+    stored = save_upload(file)
+    existing = db.scalar(select(Image).where(Image.sha256 == stored.sha256))
     if existing:
-        path.unlink(missing_ok=True)
+        remove_object(stored.object_name)
         return existing
 
-    thumbnail_path, width, height = create_thumbnail(path)
+    thumbnail_path, width, height = create_thumbnail(stored.object_name)
     image = Image(
         source_type="upload",
         original_filename=file.filename,
         mime_type=file.content_type or "application/octet-stream",
-        file_path=str(path),
-        thumbnail_path=str(thumbnail_path),
+        file_path=stored.object_name,
+        thumbnail_path=thumbnail_path,
         width=width,
         height=height,
-        size_bytes=size_bytes,
-        sha256=digest,
+        size_bytes=stored.size_bytes,
+        sha256=stored.sha256,
     )
     db.add(image)
     db.commit()
@@ -103,41 +102,23 @@ def update_metadata(db: Session, image: Image, payload: dict) -> ImageMetadata:
     return metadata
 
 
-def resolve_image_path(image: Image, thumbnail: bool = False) -> Path:
-    path_value = image.thumbnail_path if thumbnail else image.file_path
-    if not path_value:
+def load_image_bytes(image: Image, thumbnail: bool = False) -> bytes:
+    object_name = image.thumbnail_path if thumbnail else image.file_path
+    if not object_name:
         raise FileNotFoundError("Image file is not available.")
-    path = Path(path_value)
     settings = get_settings()
-    if not path.exists() or settings.storage_root.resolve() not in path.resolve().parents:
+    prefix = storage_prefix(settings)
+    if prefix and not object_name.startswith(f"{prefix}/"):
         raise FileNotFoundError("Image file is not available.")
-    return path
-
-
-def _stored_path(path_value: str | None) -> Path | None:
-    if not path_value:
-        return None
-    path = Path(path_value)
-    settings = get_settings()
-    try:
-        resolved = path.resolve()
-    except FileNotFoundError:
-        return path
-    if settings.storage_root.resolve() not in resolved.parents:
-        return None
-    return path
+    return get_object_bytes(object_name, settings)
 
 
 def delete_image(db: Session, image: Image) -> None:
-    file_paths = [
-        path
-        for path in (_stored_path(image.file_path), _stored_path(image.thumbnail_path))
-        if path is not None
-    ]
+    object_names = [image.file_path, image.thumbnail_path]
     db.delete(image)
     db.commit()
-    for path in file_paths:
-        path.unlink(missing_ok=True)
+    for object_name in object_names:
+        remove_object(object_name)
 
 
 def run_ingest_for_image(image_id: UUID) -> None:

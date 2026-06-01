@@ -8,12 +8,19 @@
 - shardcn/ui
 - tailwindcss
 
-## Backend Local Setup
+## Local Start Commands
 
-The Phase 3-A backend lives in `apps/backend` and uses FastAPI, PostgreSQL + pgvector, local filesystem storage, and the real OpenAI API.
+### 1. Required service
 
 ```bash
 docker compose up -d postgres
+```
+
+### 2. Backend API
+
+Run once:
+
+```bash
 cd apps/backend
 python -m venv .venv
 . .venv/bin/activate
@@ -21,13 +28,9 @@ pip install -e .
 cp .env.example .env
 ```
 
-Edit `apps/backend/.env`:
+Edit `apps/backend/.env` with the required `OPENAI_API_KEY`, database, and MinIO values.
 
-- Set `OPENAI_API_KEY` from your shell or local secret manager.
-- Use the local Docker `DATABASE_URL` from `.env.example` on port `5433`, or another PostgreSQL database with the `vector` extension installed.
-- Set `STORAGE_ROOT=../../storage` when running from `apps/backend`.
-
-Run the API:
+Start:
 
 ```bash
 cd apps/backend
@@ -36,10 +39,24 @@ alembic -c alembic.ini upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
 
-Health check:
+- API: `http://localhost:8000/api`
+- Docs: `http://localhost:8000/docs`
+- Health: `curl http://localhost:8000/api/health`
+
+### 3. Frontend
+
+Run once:
 
 ```bash
-curl http://localhost:8000/api/health
+cd apps/frontend
+npm install
 ```
 
-API docs are available at `http://localhost:8000/docs`.
+Start:
+
+```bash
+cd apps/frontend
+npm run dev
+```
+
+- App: `http://localhost:3000`

@@ -1,12 +1,12 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-# .env
+.env
 .venv/
 apps/backend/.venv/
-# storage/originals/*
-# storage/thumbnails/*
-# storage/generated/*
+storage/originals/*
+storage/thumbnails/*
+storage/generated/*
 !storage/originals/.gitkeep
 !storage/thumbnails/.gitkeep
 !storage/generated/.gitkeep

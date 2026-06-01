@@ -54,9 +54,25 @@ def _image_data_url(path: Path, mime_type: str) -> str:
     return f"data:{mime_type};base64,{encoded}"
 
 
-def extract_image_metadata(path: Path, mime_type: str, settings: Settings | None = None) -> ImageMetadataResult:
+def _image_bytes_data_url(image_bytes: bytes, mime_type: str) -> str:
+    encoded = base64.b64encode(image_bytes).decode("utf-8")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def extract_image_metadata(
+    path: Path | None = None,
+    mime_type: str = "application/octet-stream",
+    settings: Settings | None = None,
+    image_bytes: bytes | None = None,
+) -> ImageMetadataResult:
     settings = settings or get_settings()
     client = get_openai_client(settings)
+    if image_bytes is None:
+        if path is None:
+            raise ValueError("Either path or image_bytes is required.")
+        image_url = _image_data_url(path, mime_type)
+    else:
+        image_url = _image_bytes_data_url(image_bytes, mime_type)
     try:
         completion = client.chat.completions.parse(
             model=settings.metadata_model,
@@ -73,7 +89,7 @@ def extract_image_metadata(path: Path, mime_type: str, settings: Settings | None
                     "role": "user",
                     "content": [
                         {"type": "text", "text": "Describe this image for a searchable archive."},
-                        {"type": "image_url", "image_url": {"url": _image_data_url(path, mime_type)}},
+                        {"type": "image_url", "image_url": {"url": image_url}},
                     ],
                 },
             ],
