@@ -1,6 +1,6 @@
 "use client";
 
-import type { ImageItem } from "@/lib/mock-data";
+import type { ArchivedImage } from "@/lib/types";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,21 +13,54 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Check, ImageIcon, MoreVertical } from "lucide-react";
+import { resolveAssetUrl } from "@/lib/api-client";
 
 type ImageCardProps = {
-  image: ImageItem;
+  image: ArchivedImage;
   selected?: boolean;
   compact?: boolean;
 };
 
-function getTags(image: ImageItem) {
-  const promptTags = image.prompt
-    .split(/[\s,]+/)
-    .map((word) => word.replace(/[^a-zA-Z]/g, ""))
-    .filter((word) => word.length > 5)
-    .slice(0, 3);
+function getImageTitle(image: ArchivedImage) {
+  return image.metadata?.title ?? image.original_filename ?? "Untitled image";
+}
 
-  return [image.status, ...promptTags];
+function getImageDescription(image: ArchivedImage) {
+  return (
+    image.metadata?.description ??
+    image.original_filename ??
+    `${image.source_type} image`
+  );
+}
+
+function getImageStatus(image: ArchivedImage) {
+  return image.source_type === "generated" ? "Generated" : "Archived";
+}
+
+function getImageDate(image: ArchivedImage) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(image.created_at));
+}
+
+function getImageSize(image: ArchivedImage) {
+  if (image.width && image.height) {
+    return `${image.width} x ${image.height}`;
+  }
+
+  if (image.size_bytes) {
+    return `${Math.round(image.size_bytes / 1024)} KB`;
+  }
+
+  return "Unknown";
+}
+
+function getTags(image: ArchivedImage) {
+  const status = getImageStatus(image);
+  const metadataTags = image.metadata?.tags ?? [];
+
+  return [status, ...metadataTags].slice(0, 4);
 }
 
 function ImagePreview({
@@ -35,19 +68,32 @@ function ImagePreview({
   className,
   iconClassName,
 }: {
-  image: ImageItem;
+  image: ArchivedImage;
   className?: string;
   iconClassName?: string;
 }) {
+  const src = resolveAssetUrl(image.thumbnail_url ?? image.file_url);
+
   return (
     <div
       className={cn(
-        "flex size-full items-center justify-center bg-linear-to-br",
-        image.gradient,
+        "flex size-full items-center justify-center bg-muted",
         className
       )}
     >
-      <ImageIcon className={cn("text-foreground/35", iconClassName)} />
+      {src ? (
+        // Backend-served files are user uploads or generated outputs, so use
+        // a plain img to avoid remotePatterns requirements during local setup.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={getImageTitle(image)}
+          className="size-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <ImageIcon className={cn("text-foreground/35", iconClassName)} />
+      )}
     </div>
   );
 }
@@ -58,6 +104,8 @@ export function ImageCard({
   compact = false,
 }: ImageCardProps) {
   const tags = getTags(image);
+  const title = getImageTitle(image);
+  const description = getImageDescription(image);
 
   return (
     <Dialog>
@@ -68,7 +116,7 @@ export function ImageCard({
             "group relative block w-full overflow-hidden rounded-xl text-left shadow-sm outline-none ring-1 ring-border transition-all hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50",
             selected && "ring-2 ring-emerald-300"
           )}
-          aria-label={`Open ${image.title}`}
+          aria-label={`Open ${title}`}
         >
           <AspectRatio ratio={compact ? 16 / 9 : 4 / 5}>
             <ImagePreview
@@ -79,7 +127,7 @@ export function ImageCard({
             <div className="absolute inset-0 bg-black/5" />
             <div className="absolute left-3 top-3 flex items-center gap-2">
               <Badge className="rounded-full bg-black/40 text-white backdrop-blur-sm">
-                {image.status}
+                {getImageStatus(image)}
               </Badge>
               {selected ? (
                 <span className="flex size-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
@@ -100,9 +148,9 @@ export function ImageCard({
           </div>
           <div className="min-h-0 overflow-y-auto p-4 md:p-5">
             <DialogHeader className="pr-9">
-              <DialogTitle className="text-xl">{image.title}</DialogTitle>
+              <DialogTitle className="text-xl">{title}</DialogTitle>
               <DialogDescription className="leading-6">
-                {image.prompt}
+                {description}
               </DialogDescription>
             </DialogHeader>
 
@@ -123,15 +171,15 @@ export function ImageCard({
               <dl className="grid gap-3 text-sm">
                 <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
                   <dt className="text-muted-foreground">File size</dt>
-                  <dd className="font-medium">{image.size}</dd>
+                  <dd className="font-medium">{getImageSize(image)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
                   <dt className="text-muted-foreground">Created</dt>
-                  <dd className="font-medium">{image.date}</dd>
+                  <dd className="font-medium">{getImageDate(image)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
                   <dt className="text-muted-foreground">Status</dt>
-                  <dd className="font-medium">{image.status}</dd>
+                  <dd className="font-medium">{getImageStatus(image)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-muted-foreground">Asset ID</dt>

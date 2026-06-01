@@ -1,11 +1,11 @@
-import type { ChatMessage as ChatMessageType } from "@/lib/mock-data";
+import type { ArchivedImage, ChatMessage as ChatMessageType } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ImageCard } from "@/components/image-card";
 import { cn } from "@/lib/utils";
 import { Bot, User } from "lucide-react";
 
 type ChatMessageProps = {
-  message: ChatMessageType;
+  message: ChatMessageType & { images?: ArchivedImage[] };
 };
 
 export function ChatMessage({ message }: ChatMessageProps) {
@@ -34,7 +34,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
               : "border border-border bg-white text-foreground"
           )}
         >
-          {message.text}
+          {message.content}
         </div>
         {message.images?.length ? (
           <div className="grid w-full gap-3 sm:grid-cols-2">

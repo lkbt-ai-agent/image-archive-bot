@@ -19,6 +19,7 @@ import {
 const pageLabels: Record<string, string> = {
   "/chat": "Chat",
   "/archive": "Archive",
+  "/search": "Search",
   "/generated": "Generated",
 };
 

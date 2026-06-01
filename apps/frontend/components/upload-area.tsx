@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 
-import type { ImageItem } from "@/lib/mock-data";
+import type { ArchivedImage } from "@/lib/types";
 import { ImageSelection } from "@/components/image-selection";
 import {
   InputGroup,
@@ -14,24 +14,33 @@ import { Button } from "@/components/ui/button";
 import { ImagePlus, Paperclip, Send, Sparkles, UploadCloud } from "lucide-react";
 
 const commandSuggestions = [
-  "Archive references",
+  "Find similar images",
   "Compare selected",
   "Generate variants",
 ];
 
 type UploadAreaProps = {
-  images: ImageItem[];
+  images: ArchivedImage[];
   selectedIds: string[];
   onSelectedImagesChange: (ids: string[]) => void;
+  disabled?: boolean;
+  uploadDisabled?: boolean;
+  onSubmit: (prompt: string) => Promise<void> | void;
+  onUpload: (file: File) => Promise<void> | void;
 };
 
 export function UploadArea({
   images,
   selectedIds,
   onSelectedImagesChange,
+  disabled = false,
+  uploadDisabled = false,
+  onSubmit,
+  onUpload,
 }: UploadAreaProps) {
   const [prompt, setPrompt] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -44,8 +53,37 @@ export function UploadArea({
     textarea.style.height = `${textarea.scrollHeight}px`;
   }, [prompt]);
 
+  async function submitPrompt() {
+    const value = prompt.trim();
+
+    if (!value || disabled) {
+      return;
+    }
+
+    await onSubmit(value);
+    setPrompt("");
+  }
+
+  async function uploadFile(file: File | undefined) {
+    if (!file || uploadDisabled) {
+      return;
+    }
+
+    await onUpload(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-4xl space-y-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => uploadFile(event.target.files?.[0])}
+      />
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {commandSuggestions.map((command) => (
           <Button
@@ -54,6 +92,7 @@ export function UploadArea({
             variant="outline"
             size="sm"
             className="shrink-0 rounded-full bg-background shadow-xs"
+            onClick={() => setPrompt(command)}
           >
             <Sparkles className="size-3.5" />
             {command}
@@ -64,6 +103,8 @@ export function UploadArea({
           variant="outline"
           size="sm"
           className="shrink-0 rounded-full bg-background shadow-xs"
+          disabled={uploadDisabled}
+          onClick={() => fileInputRef.current?.click()}
         >
           <UploadCloud className="size-3.5" />
           Upload image
@@ -82,14 +123,30 @@ export function UploadArea({
           placeholder="Ask to archive, compare, or generate images..."
           rows={1}
           onChange={(event) => setPrompt(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              submitPrompt();
+            }
+          }}
           className="max-h-40 min-h-[40px] overflow-y-auto border-0 bg-transparent px-2 py-2 leading-6"
         />
         <InputGroupAddon align="block-end" className="justify-between px-0 pb-0">
           <div className="flex items-center gap-1">
-            <InputGroupButton size="icon-sm" aria-label="Attach image">
+            <InputGroupButton
+              size="icon-sm"
+              aria-label="Attach image"
+              disabled={uploadDisabled}
+              onClick={() => fileInputRef.current?.click()}
+            >
               <Paperclip className="size-4" />
             </InputGroupButton>
-            <InputGroupButton size="icon-sm" aria-label="Add image reference">
+            <InputGroupButton
+              size="icon-sm"
+              aria-label="Add image reference"
+              disabled={uploadDisabled}
+              onClick={() => fileInputRef.current?.click()}
+            >
               <ImagePlus className="size-4" />
             </InputGroupButton>
           </div>
@@ -98,6 +155,8 @@ export function UploadArea({
             size="icon-sm"
             className="rounded-full"
             aria-label="Send message"
+            disabled={!prompt.trim() || disabled}
+            onClick={submitPrompt}
           >
             <Send className="size-4" />
           </InputGroupButton>
