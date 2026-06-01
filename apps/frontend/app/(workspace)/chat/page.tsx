@@ -94,12 +94,17 @@ export default function ChatPage() {
       return;
     }
 
+    const attachedImages = selectableImages.filter((image) =>
+      selectedIds.includes(image.id)
+    );
+
     setSending(true);
     setError(null);
 
     try {
       const response = await api.postMessage(session.id, {
         content: prompt,
+        image_ids: selectedIds,
         generation: wantsGeneration(prompt)
           ? { size: "1024x1024", save_to_archive: true }
           : undefined,
@@ -111,6 +116,13 @@ export default function ChatPage() {
         response.assistant_message,
       ]);
 
+      if (attachedImages.length) {
+        setMessageImages((current) => ({
+          ...current,
+          [response.user_message.id]: attachedImages,
+        }));
+      }
+
       const generatedImage = response.image;
 
       if (generatedImage) {
@@ -120,6 +132,8 @@ export default function ChatPage() {
         }));
         setSelectableImages((current) => [generatedImage, ...current]);
       }
+
+      setSelectedIds([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to send message.");
     } finally {

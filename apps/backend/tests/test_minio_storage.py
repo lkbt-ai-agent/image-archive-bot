@@ -106,3 +106,11 @@ def test_backend_loads_image_bytes_from_minio_bucket(monkeypatch):
     assert client.last_response is not None
     assert client.last_response.closed is True
     assert client.last_response.released is True
+
+
+def test_chat_archive_request_detects_korean_save_intent():
+    from app.modules.chat.service import _archive_request
+
+    assert _archive_request("이 이미지를 저장해줘") is True
+    assert _archive_request("Please save this image") is True
+    assert _archive_request("How do I upload an image?") is False

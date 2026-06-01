@@ -14,6 +14,7 @@ class ChatSessionCreate(BaseModel):
 class ChatMessageCreate(BaseModel):
     content: str = Field(min_length=1)
     generation: GenerationOptions | None = None
+    image_ids: list[UUID] = Field(default_factory=list)
 
 
 class ChatMessageOut(BaseModel):
@@ -42,4 +43,3 @@ class ChatMessageResponse(BaseModel):
     generation_id: UUID | None = None
     image_id: UUID | None = None
     image: ImageOut | None = None
-

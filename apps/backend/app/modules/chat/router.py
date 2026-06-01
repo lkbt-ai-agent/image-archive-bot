@@ -42,6 +42,7 @@ def post_message(session_id: UUID, payload: ChatMessageCreate, db: Session = Dep
             session,
             payload.content,
             payload.generation.model_dump() if payload.generation else None,
+            payload.image_ids,
         )
     except OpenAIServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

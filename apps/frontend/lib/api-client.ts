@@ -121,6 +121,7 @@ export const api = {
     payload: {
       content: string;
       generation?: { size: string; save_to_archive: boolean };
+      image_ids?: string[];
     }
   ) {
     return request<ChatMessageResponse>(`/api/chat/sessions/${sessionId}/messages`, {

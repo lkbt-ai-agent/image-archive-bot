@@ -23,6 +23,11 @@ GENERATION_REQUEST_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 GENERATION_QUESTION_STARTS = ("how ", "what ", "why ", "when ", "where ", "who ")
+ARCHIVE_REQUEST_RE = re.compile(
+    r"(save|store|archive|저장|보관|아카이브).*(image|photo|picture|이미지|사진)|"
+    r"(image|photo|picture|이미지|사진).*(save|store|archive|저장|보관|아카이브)",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def serialize_message(message: ChatMessage) -> dict:
@@ -86,11 +91,40 @@ def _history_text(messages: list[ChatMessage]) -> str:
     return "\n".join(f"{message.role}: {message.content}" for message in recent)
 
 
-def post_user_message(db: Session, session: ChatSession, content: str, generation_options: dict | None = None) -> dict:
+def _archive_request(content: str) -> bool:
+    return bool(ARCHIVE_REQUEST_RE.search(content))
+
+
+def _attached_images_text(images: list[Image]) -> str:
+    if not images:
+        return "No images are attached to the latest user message."
+    lines = ["Attached images for the latest user message:"]
+    for image in images:
+        lines.append(
+            "- "
+            f"id={image.id}; "
+            f"filename={image.original_filename or 'untitled'}; "
+            f"source={image.source_type}; "
+            f"size={image.width or '?'}x{image.height or '?'}"
+        )
+    return "\n".join(lines)
+
+
+def post_user_message(
+    db: Session,
+    session: ChatSession,
+    content: str,
+    generation_options: dict | None = None,
+    image_ids: list[UUID] | None = None,
+) -> dict:
     user_message = ChatMessage(session_id=session.id, role="user", content=content)
     db.add(user_message)
     db.commit()
     db.refresh(user_message)
+
+    attached_images = list(
+        db.scalars(select(Image).where(Image.id.in_(image_ids or [])).order_by(Image.created_at.desc()))
+    ) if image_ids else []
 
     prompt = _generation_prompt(content)
     if generation_options is not None and prompt is None:
@@ -119,6 +153,18 @@ def post_user_message(db: Session, session: ChatSession, content: str, generatio
         generation_id = generation.id
         image_id = image.id
         image_payload = serialize_image(image)
+    elif attached_images and _archive_request(content):
+        image_payload = serialize_image(attached_images[0])
+        image_id = attached_images[0].id
+        count_text = "image has" if len(attached_images) == 1 else f"{len(attached_images)} images have"
+        assistant_message = ChatMessage(
+            session_id=session.id,
+            role="assistant",
+            content=f"The {count_text} been saved successfully.",
+        )
+        db.add(assistant_message)
+        db.commit()
+        db.refresh(assistant_message)
     else:
         messages = list(
             db.scalars(
@@ -129,10 +175,15 @@ def post_user_message(db: Session, session: ChatSession, content: str, generatio
         )
         instructions = (
             "You are an image archive assistant. Help users search, describe, compare, and plan image generation. "
-            "Be concise and mention that image generation can be requested with 'image generation:' when relevant."
+            "Be concise. Use the attached image context when it is present, and do not ask the user to upload an "
+            "image that is listed as attached."
         )
         response_text, response_id = chat_response(
-            input_text=f"Conversation so far:\n{_history_text(messages)}\n\nReply to the latest user message.",
+            input_text=(
+                f"Conversation so far:\n{_history_text(messages)}\n\n"
+                f"{_attached_images_text(attached_images)}\n\n"
+                "Reply to the latest user message."
+            ),
             instructions=instructions,
         )
         assistant_message = ChatMessage(
