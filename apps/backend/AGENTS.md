@@ -1,0 +1,2 @@
+- Current architecture uses pgvector, not Qdrant.
+- Backend uses real OpenAI APIs only. No mock OpenAI service or placeholder response path was added.

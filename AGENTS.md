@@ -1,0 +1,1 @@
+- Record the documentation and deliverables in a separate Markdown file, not in AGENTS.md.
