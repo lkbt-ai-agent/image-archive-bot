@@ -1,11 +1,12 @@
 import re
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.openai_client import chat_response
-from app.models.chat import ChatMessage, ChatSession
+from app.models.chat import ChatMessage, ChatMessageImage, ChatSession
 from app.models.generation import Generation
 from app.models.image import Image
 from app.modules.archive.service import serialize_image
@@ -38,6 +39,7 @@ def serialize_message(message: ChatMessage) -> dict:
         "content": message.content,
         "openai_response_id": message.openai_response_id,
         "created_at": message.created_at,
+        "images": [serialize_image(image) for image in getattr(message, "images", [])],
     }
 
 
@@ -63,7 +65,15 @@ def list_sessions(db: Session) -> list[ChatSession]:
 
 
 def get_session(db: Session, session_id: UUID) -> ChatSession | None:
-    return db.scalar(select(ChatSession).options(selectinload(ChatSession.messages)).where(ChatSession.id == session_id))
+    return db.scalar(
+        select(ChatSession)
+        .options(
+            selectinload(ChatSession.messages)
+            .selectinload(ChatMessage.images)
+            .selectinload(Image.metadata_record)
+        )
+        .where(ChatSession.id == session_id)
+    )
 
 
 def _generation_prompt(content: str) -> str | None:
@@ -110,6 +120,29 @@ def _attached_images_text(images: list[Image]) -> str:
     return "\n".join(lines)
 
 
+def _ordered_images(images: list[Image], image_ids: list[UUID]) -> list[Image]:
+    by_id = {image.id: image for image in images}
+    return [by_id[image_id] for image_id in image_ids if image_id in by_id]
+
+
+def _attach_images_to_message(db: Session, message_id: UUID, images: list[Image]) -> None:
+    for image in images:
+        db.add(ChatMessageImage(message_id=message_id, image_id=image.id))
+
+
+def _session_title_from_content(content: str) -> str:
+    title = " ".join(content.split())
+    if len(title) > 48:
+        return f"{title[:45].rstrip()}..."
+    return title or "Image workspace"
+
+
+def _touch_session(session: ChatSession, content: str) -> None:
+    if not session.title or session.title == "Image workspace":
+        session.title = _session_title_from_content(content)
+    session.updated_at = datetime.now(UTC)
+
+
 def post_user_message(
     db: Session,
     session: ChatSession,
@@ -118,13 +151,23 @@ def post_user_message(
     image_ids: list[UUID] | None = None,
 ) -> dict:
     user_message = ChatMessage(session_id=session.id, role="user", content=content)
+    _touch_session(session, content)
     db.add(user_message)
     db.commit()
     db.refresh(user_message)
 
-    attached_images = list(
-        db.scalars(select(Image).where(Image.id.in_(image_ids or [])).order_by(Image.created_at.desc()))
-    ) if image_ids else []
+    attached_images = []
+    if image_ids:
+        matched_images = list(
+            db.scalars(
+                select(Image)
+                .options(selectinload(Image.metadata_record))
+                .where(Image.id.in_(image_ids))
+            )
+        )
+        attached_images = _ordered_images(matched_images, image_ids)
+        _attach_images_to_message(db, user_message.id, attached_images)
+        db.commit()
 
     prompt = _generation_prompt(content)
     if generation_options is not None and prompt is None:
@@ -148,6 +191,7 @@ def post_user_message(
         db.add(assistant_message)
         db.flush()
         generation.assistant_message_id = assistant_message.id
+        _attach_images_to_message(db, assistant_message.id, [image])
         db.commit()
         db.refresh(assistant_message)
         generation_id = generation.id
@@ -163,6 +207,8 @@ def post_user_message(
             content=f"The {count_text} been saved successfully.",
         )
         db.add(assistant_message)
+        db.flush()
+        _attach_images_to_message(db, assistant_message.id, attached_images)
         db.commit()
         db.refresh(assistant_message)
     else:

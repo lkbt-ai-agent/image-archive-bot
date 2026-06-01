@@ -24,6 +24,7 @@ class ChatMessageOut(BaseModel):
     content: str
     openai_response_id: str | None = None
     created_at: datetime
+    images: list[ImageOut] = Field(default_factory=list)
 
 
 class ChatSessionOut(BaseModel):

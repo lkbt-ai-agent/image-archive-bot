@@ -1,0 +1,89 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - link "Archive Chat Image workspace" [ref=e9] [cursor=pointer]:
+            - /url: /chat
+            - img [ref=e11]
+            - generic [ref=e14]:
+              - generic [ref=e15]: Archive Chat
+              - generic [ref=e16]: Image workspace
+      - generic [ref=e17]:
+        - list [ref=e20]:
+          - listitem [ref=e21]:
+            - button "New Chat" [ref=e22]:
+              - img [ref=e23]
+              - generic [ref=e25]: New Chat
+          - listitem [ref=e26]:
+            - link "Archive" [ref=e27] [cursor=pointer]:
+              - /url: /archive
+              - img [ref=e28]
+              - generic [ref=e31]: Archive
+          - listitem [ref=e32]:
+            - link "Search" [ref=e33] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e34]
+              - generic [ref=e37]: Search
+          - listitem [ref=e38]:
+            - link "Generated" [ref=e39] [cursor=pointer]:
+              - /url: /generated
+              - img [ref=e40]
+              - generic [ref=e45]: Generated
+          - listitem [ref=e46]:
+            - link "Settings" [ref=e47] [cursor=pointer]:
+              - /url: /chat
+              - img [ref=e48]
+              - generic [ref=e51]: Settings
+            - button "Toggle" [ref=e52]:
+              - img [ref=e53]
+              - generic [ref=e55]: Toggle
+        - generic [ref=e56]:
+          - generic [ref=e57]: Recents
+          - list [ref=e59]:
+            - listitem [ref=e60]:
+              - generic [ref=e61]: No recent chats
+      - list [ref=e63]:
+        - listitem [ref=e64]:
+          - button "AI Archive Team images@example.com" [ref=e65]:
+            - generic [ref=e67]: AI
+            - generic [ref=e68]:
+              - generic [ref=e69]: Archive Team
+              - generic [ref=e70]: images@example.com
+            - img [ref=e71]
+      - button "Toggle Sidebar" [ref=e74]
+    - main [ref=e75]:
+      - generic [ref=e77]:
+        - button "Toggle Sidebar" [ref=e78]:
+          - img
+          - generic [ref=e79]: Toggle Sidebar
+        - navigation "breadcrumb" [ref=e80]:
+          - list [ref=e81]:
+            - listitem [ref=e82]:
+              - link "Chat" [disabled] [ref=e83]
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - button "Find similar images" [ref=e96]:
+            - img
+            - text: Find similar images
+          - button "Compare selected" [ref=e97]:
+            - img
+            - text: Compare selected
+          - button "Generate variants" [ref=e98]:
+            - img
+            - text: Generate variants
+          - button "Upload image" [ref=e99]:
+            - img
+            - text: Upload image
+        - group [ref=e100]:
+          - textbox "Ask to archive, compare, or generate images..." [ref=e101]
+          - group [ref=e102]:
+            - generic [ref=e103]:
+              - button "Attach image" [ref=e104]:
+                - img
+              - button "Add image reference" [ref=e105]:
+                - img
+            - button "Send message" [disabled]:
+              - img
+  - button "Open Next.js Dev Tools" [ref=e111] [cursor=pointer]:
+    - img [ref=e112]

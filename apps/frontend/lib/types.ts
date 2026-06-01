@@ -53,6 +53,7 @@ export type ChatMessage = {
   content: string;
   openai_response_id: string | null;
   created_at: string;
+  images?: ArchivedImage[];
 };
 
 export type ChatSessionDetail = ChatSession & {

@@ -22,13 +22,13 @@ export function ChatMessage({ message }: ChatMessageProps) {
       ) : null}
       <div
         className={cn(
-          "max-w-[760px] space-y-3",
+          "w-full max-w-[760px] space-y-3",
           isUser && "flex flex-col items-end"
         )}
       >
         <div
           className={cn(
-            "rounded-[8px] px-4 py-3 text-sm leading-6 shadow-xs",
+            "w-fit max-w-full rounded-[8px] px-4 py-3 text-sm leading-6 shadow-xs",
             isUser
               ? "bg-foreground/80 text-background"
               : "border border-border bg-white text-foreground"

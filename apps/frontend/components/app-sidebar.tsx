@@ -1,8 +1,9 @@
 "use client";
 
 import type * as React from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Archive,
   BadgeCheck,
@@ -56,13 +57,10 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { api } from "@/lib/api-client";
+import type { ChatSession } from "@/lib/types";
 
 const primaryItems = [
-  {
-    title: "New Chat",
-    url: "/chat",
-    icon: MessageSquarePlus,
-  },
   {
     title: "Archive",
     url: "/archive",
@@ -99,13 +97,6 @@ const settingsItem = {
     },
   ],
 };
-
-const recentChats = [
-  "Botanical product set",
-  "Archive import cleanup",
-  "Editorial portrait ideas",
-  "Generated gallery review",
-];
 
 const user = {
   name: "Archive Team",
@@ -146,11 +137,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 function MainMenu() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [creating, setCreating] = useState(false);
+
+  async function createChat() {
+    if (creating) {
+      return;
+    }
+
+    setCreating(true);
+
+    try {
+      const session = await api.createSession("Image workspace");
+      window.dispatchEvent(new Event("chat-sessions-changed"));
+      router.push(`/chat/${session.id}`);
+      router.refresh();
+    } finally {
+      setCreating(false);
+    }
+  }
 
   return (
     <SidebarGroup>
       <SidebarGroupContent>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="New Chat"
+              disabled={creating}
+              onClick={createChat}
+            >
+              <MessageSquarePlus />
+              <span>{creating ? "Creating..." : "New Chat"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           {primaryItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
@@ -222,40 +242,92 @@ function SettingsMenu({
 }
 
 function RecentsMenu() {
+  const pathname = usePathname();
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSessions() {
+      try {
+        const payload = await api.listSessions();
+
+        if (active) {
+          setSessions(payload);
+          setError(null);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "Unable to load chats.");
+        }
+      }
+    }
+
+    loadSessions();
+    window.addEventListener("chat-sessions-changed", loadSessions);
+
+    return () => {
+      active = false;
+      window.removeEventListener("chat-sessions-changed", loadSessions);
+    };
+  }, [pathname]);
+
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Recents</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {recentChats.map((chat) => (
-            <SidebarMenuItem key={chat}>
-              <SidebarMenuButton asChild className="pr-8">
-                <Link href="/chat">
-                  <span>{chat}</span>
-                </Link>
-              </SidebarMenuButton>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuAction showOnHover>
-                    <Ellipsis />
-                    <span className="sr-only">More</span>
-                  </SidebarMenuAction>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" side="right" align="start">
-                  <DropdownMenuItem>
-                    <span>Share</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <span>Rename</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive">
-                    <span>Delete</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          {error ? (
+            <SidebarMenuItem>
+              <div className="px-2 py-1.5 text-xs text-destructive">{error}</div>
             </SidebarMenuItem>
-          ))}
+          ) : null}
+          {!error && !sessions.length ? (
+            <SidebarMenuItem>
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                No recent chats
+              </div>
+            </SidebarMenuItem>
+          ) : null}
+          {sessions.map((chat) => {
+            const title = chat.title?.trim() || "Untitled chat";
+            const url = `/chat/${chat.id}`;
+
+            return (
+              <SidebarMenuItem key={chat.id}>
+                <SidebarMenuButton
+                  asChild
+                  className="pr-8"
+                  isActive={pathname === url}
+                >
+                  <Link href={url}>
+                    <span>{title}</span>
+                  </Link>
+                </SidebarMenuButton>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuAction showOnHover>
+                      <Ellipsis />
+                      <span className="sr-only">More</span>
+                    </SidebarMenuAction>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-40" side="right" align="start">
+                    <DropdownMenuItem>
+                      <span>Share</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <span>Rename</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive">
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

@@ -1,0 +1,126 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - link "Archive Chat Image workspace" [ref=e9] [cursor=pointer]:
+            - /url: /chat
+            - img [ref=e11]
+            - generic [ref=e14]:
+              - generic [ref=e15]: Archive Chat
+              - generic [ref=e16]: Image workspace
+      - generic [ref=e17]:
+        - list [ref=e20]:
+          - listitem [ref=e21]:
+            - button "New Chat" [ref=e22]:
+              - img [ref=e23]
+              - generic [ref=e25]: New Chat
+          - listitem [ref=e26]:
+            - link "Archive" [ref=e27] [cursor=pointer]:
+              - /url: /archive
+              - img [ref=e28]
+              - generic [ref=e31]: Archive
+          - listitem [ref=e32]:
+            - link "Search" [ref=e33] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e34]
+              - generic [ref=e37]: Search
+          - listitem [ref=e38]:
+            - link "Generated" [ref=e39] [cursor=pointer]:
+              - /url: /generated
+              - img [ref=e40]
+              - generic [ref=e45]: Generated
+          - listitem [ref=e46]:
+            - link "Settings" [ref=e47] [cursor=pointer]:
+              - /url: /chat
+              - img [ref=e48]
+              - generic [ref=e51]: Settings
+            - button "Toggle" [expanded] [ref=e52]:
+              - img [ref=e53]
+              - generic [ref=e55]: Toggle
+            - list [ref=e57]:
+              - listitem [ref=e58]:
+                - link "Workspace" [ref=e59] [cursor=pointer]:
+                  - /url: /chat
+                  - generic [ref=e60]: Workspace
+              - listitem [ref=e61]:
+                - link "Image defaults" [ref=e62] [cursor=pointer]:
+                  - /url: /chat
+                  - generic [ref=e63]: Image defaults
+              - listitem [ref=e64]:
+                - link "Storage limits" [ref=e65] [cursor=pointer]:
+                  - /url: /chat
+                  - generic [ref=e66]: Storage limits
+        - generic [ref=e67]:
+          - generic [ref=e68]: Recents
+          - list [ref=e70]:
+            - listitem [ref=e171]:
+              - link "Image workspace" [ref=e172] [cursor=pointer]:
+                - /url: /chat/c83001d7-9612-4420-875e-9082e370812d
+                - generic [ref=e173]: Image workspace
+              - button "More" [ref=e174]:
+                - img [ref=e175]
+                - generic [ref=e179]: More
+            - listitem [ref=e126]:
+              - link "Image workspace" [ref=e127] [cursor=pointer]:
+                - /url: /chat/121abd0f-268c-40a1-ae2a-181e9385ec44
+                - generic [ref=e128]: Image workspace
+              - button "More" [ref=e129]:
+                - img [ref=e130]
+                - generic [ref=e134]: More
+            - listitem [ref=e135]:
+              - link "Image workspace" [ref=e136] [cursor=pointer]:
+                - /url: /chat/5cbc2b85-9fa8-4006-982b-e2f563f3b05c
+                - generic [ref=e137]: Image workspace
+              - button "More" [ref=e138]:
+                - img [ref=e139]
+                - generic [ref=e143]: More
+      - list [ref=e74]:
+        - listitem [ref=e75]:
+          - button "AI Archive Team images@example.com" [ref=e76]:
+            - generic [ref=e78]: AI
+            - generic [ref=e79]:
+              - generic [ref=e80]: Archive Team
+              - generic [ref=e81]: images@example.com
+            - img [ref=e82]
+      - button "Toggle Sidebar" [ref=e85]
+    - main [ref=e86]:
+      - generic [ref=e88]:
+        - button "Toggle Sidebar" [ref=e89]:
+          - img
+          - generic [ref=e90]: Toggle Sidebar
+        - navigation "breadcrumb" [ref=e91]:
+          - list [ref=e92]:
+            - listitem [ref=e93]:
+              - link "Chat" [disabled] [ref=e94]
+      - generic [ref=e180]:
+        - generic [ref=e185]:
+          - img [ref=e188]
+          - generic [ref=e192]: Send images to archive them, or describe a new image to generate. Generated results are saved back into the archive.
+        - generic [ref=e194]:
+          - generic [ref=e195]:
+            - button "Find similar images" [ref=e196]:
+              - img
+              - text: Find similar images
+            - button "Compare selected" [ref=e197]:
+              - img
+              - text: Compare selected
+            - button "Generate variants" [ref=e198]:
+              - img
+              - text: Generate variants
+            - button "Upload image" [ref=e199]:
+              - img
+              - text: Upload image
+          - group [ref=e200]:
+            - textbox "Ask to archive, compare, or generate images..." [ref=e201]
+            - group [ref=e202]:
+              - generic [ref=e203]:
+                - button "Attach image" [ref=e204]:
+                  - img
+                - button "Add image reference" [ref=e205]:
+                  - img
+              - button "Send message" [disabled]:
+                - img
+  - button "Open Next.js Dev Tools" [ref=e122] [cursor=pointer]:
+    - img [ref=e123]
+  - alert [ref=e170]
